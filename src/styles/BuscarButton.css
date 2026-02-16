@@ -1,0 +1,49 @@
+.btn-buscar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: transparent;
+  border: 2px solid #fff;
+  border-radius: 50px;
+  color: #fff;
+  font-family: 'Arial', sans-serif;
+  font-size: 18px;
+  font-weight: 500;
+  padding: 10px 20px;
+  width: 180px;
+  height: 60px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.btn-buscar span {
+  margin-left: 10px;
+}
+
+.btn-buscar .icono {
+  background-color: #fff;
+  color: #000;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.3s ease;
+}
+
+/* Flecha ↗ */
+.btn-buscar svg {
+  width: 22px;
+  height: 22px;
+  transform: rotate(-45deg);
+}
+
+.btn-buscar:hover .icono {
+  transform: scale(1.1);
+}
+
+.btn-buscar:hover {
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+}
