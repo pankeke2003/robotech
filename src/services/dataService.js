@@ -252,7 +252,7 @@ export const dataService = {
         })
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.message || "Error al confirmar ganador");
+      if (!response.ok) throw new Error(data.message || data.error || "Error al confirmar ganador");
       return data;
     } catch (error) {
       console.error("Error confirming winner:", error);
@@ -278,6 +278,29 @@ export const dataService = {
     } catch (error) {
       console.error("Error fetching rankings:", error);
       return { data: [], total: 0 };
+    }
+  },
+
+  /**
+   * Finalizar torneo con puestos y puntos
+   */
+  finalizeTournament: async (tournamentId, results) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${API_BASE_URL}/tournaments/${tournamentId}/finalize`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token || ""}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ results })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Error al finalizar el torneo");
+      return data;
+    } catch (error) {
+      console.error("Error finalizing tournament:", error);
+      throw error;
     }
   },
 };

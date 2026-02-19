@@ -110,17 +110,29 @@ const Perfil = () => {
       if (!displayUser || !displayUser.id) return;
 
       try {
-        // Fetch club where this user is owner
-        let url = `http://localhost:3000/api/clubs?owner_id=${displayUser.id}`;
+        let url;
+        // Si el usuario es competidor y tiene un club_id asociado
+        if (displayUser.role === 'competitor' && displayUser.competitor?.club_id) {
+          url = `http://localhost:3000/api/clubs/${displayUser.competitor.club_id}`;
+        } else {
+          // Por defecto buscar si es dueño de algún club
+          url = `http://localhost:3000/api/clubs?owner_id=${displayUser.id}`;
+        }
 
-        // If user is competitor, logic might be different (e.g. check membership)
-        // For now, showing club owner's club
         const res = await fetch(url);
         if (res.ok) {
           const data = await res.json();
-          if (data.data && data.data.length > 0) {
-            setRealClubData(data.data[0]);
-            setRealClubName(data.data[0].nombre || data.data[0].name);
+          // Si usamos la ruta /api/clubs/${id}, nos devuelve el objeto directamente
+          // Si usamos /api/clubs?owner_id=..., nos devuelve { data: [...] }
+          if (data.data && Array.isArray(data.data) && data.data.length > 0) {
+            const club = data.data[0];
+            setRealClubData(club);
+            setRealClubName(club.nombre || club.name);
+            return;
+          } else if (data.id) {
+            // Caso de objeto directo (/api/clubs/${id})
+            setRealClubData(data);
+            setRealClubName(data.nombre || data.name);
             return;
           }
         }
@@ -230,15 +242,27 @@ const Perfil = () => {
     nickname: displayUser?.nickname || "Invitado",
     email: displayUser?.email || "Oculto",
     club: realClubData ? (
-      <button
-        onClick={() => navigate('/menu?vista=club-detalle', { state: { selectedClub: realClubData, fromLogin: isFromLogin } })}
-        className="flex items-center gap-2 hover:text-[#00C2FF] transition-colors text-left"
-      >
-        <span className="truncate max-w-[150px]">{realClubName}</span>
-        <span className="px-1.5 py-0.5 bg-yellow-500 text-black text-[8px] font-black rounded uppercase tracking-wider">
-          Dueño
-        </span>
-      </button>
+      <div className="flex flex-col gap-1">
+        <button
+          onClick={() => navigate('/menu?vista=club-detalle', { state: { selectedClub: realClubData, fromLogin: isFromLogin } })}
+          className="flex items-center gap-2 hover:text-[#00C2FF] transition-colors text-left"
+        >
+          <span className="truncate max-w-[150px]">{realClubName}</span>
+          {displayUser.role === 'club_owner' ? (
+            <span className="px-1.5 py-0.5 bg-yellow-500 text-black text-[8px] font-black rounded uppercase tracking-wider">
+              Dueño
+            </span>
+          ) : displayUser.competitor?.is_approved ? (
+            <span className="px-1.5 py-0.5 bg-green-500 text-white text-[8px] font-black rounded uppercase tracking-wider">
+              Miembro
+            </span>
+          ) : (
+            <span className="px-1.5 py-0.5 bg-orange-500 text-white text-[8px] font-black rounded uppercase tracking-wider animate-pulse">
+              Pendiente
+            </span>
+          )}
+        </button>
+      </div>
     ) : realClubName,
     points: displayUser?.points || 0,
     winRate: displayUser?.winRate || "0%",

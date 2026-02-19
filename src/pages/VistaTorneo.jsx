@@ -122,17 +122,22 @@ const VistaTorneo = () => {
         const t = data.data;
 
         // Auto-start simulation if status changes to 'active'
-        if ((torneo.status === 'draft' || !torneo.status) && t.status === 'active' && faseSimulacion === 'idle') {
+        if (t.status === 'active' && faseSimulacion === 'idle') {
           // Check if simulation already played for THIS tournament
-          const simulationPlayed = localStorage.getItem(`sim_played_${t.id}`);
+          const simulationKey = `sim_played_${t.id}`;
+          const simulationPlayed = localStorage.getItem(simulationKey);
+
           if (!simulationPlayed) {
             handleIniciarTorneo();
-            localStorage.setItem(`sim_played_${t.id}`, 'true');
+            localStorage.setItem(simulationKey, 'true');
           } else {
             // If already played, go straight to results view
             setFaseSimulacion('finalizado');
             setShowCombates(true);
           }
+        } else if (t.status === 'finished') {
+          setFaseSimulacion('finalizado');
+          setShowCombates(true);
         }
 
         const mappedInscritos = t.registrations?.map(r => ({
@@ -176,7 +181,14 @@ const VistaTorneo = () => {
               r2: findN(m.competitor_b),
               winner: m.winner_id ? findW(m.winner_id) : null
             };
-          })
+          }),
+          results: t.results?.map(r => ({
+            position: r.position,
+            nombre: r.competitors?.user?.nickname || "Participante",
+            club: r.competitors?.club?.name || "Sin Club",
+            puntos: r.points_awarded,
+            robot: r.robots?.name || "Robot"
+          })) || []
         }));
 
         setInscritos(mappedInscritos);
@@ -201,8 +213,10 @@ const VistaTorneo = () => {
   // Unified Polling Hook
   useEffect(() => {
     let interval;
-    // Poll if registration is pending OR if the tournament is in draft (waiting to start)
-    const shouldPoll = (esInscrito && registrationStatus === 'pending') || (torneo.status === 'draft' && faseSimulacion === 'idle');
+    // Poll if registration is pending OR if the tournament is in draft/active (waiting to start or waiting for judge results)
+    const shouldPoll = (esInscrito && registrationStatus === 'pending') ||
+      (torneo.status === 'draft' && faseSimulacion === 'idle') ||
+      (torneo.status === 'active' && faseSimulacion === 'finalizado');
 
     if (shouldPoll) {
       interval = setInterval(() => {
@@ -653,68 +667,96 @@ const VistaTorneo = () => {
                         <div className="bg-gradient-to-br from-yellow-500/10 to-amber-700/5 p-8 rounded-3xl shadow-2xl relative overflow-hidden text-center border border-yellow-500/20">
                           <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_center,rgba(255,198,0,0.1),transparent_70%)]"></div>
                           <GiPodiumWinner className="text-6xl text-yellow-500 mx-auto mb-2 drop-shadow-[0_0_15px_rgba(234,179,8,0.4)]" />
-                          {(() => {
-                            const finalMatch = torneo.matches?.[torneo.matches.length - 1];
-                            const officialWinnerId = finalMatch?.winner_id;
-                            const officialWinner = officialWinnerId ? inscritos.find(i => i.id === officialWinnerId) : null;
 
-                            if (officialWinner) {
-                              return (
-                                <div className="mb-8 animate-bounce">
-                                  <h2 className="text-4xl md:text-6xl font-black text-yellow-500 uppercase italic tracking-tighter mb-2 drop-shadow-[0_0_20px_rgba(234,179,8,0.6)]">
-                                    {officialWinner.nombre}
-                                  </h2>
-                                  <p className="text-white text-sm font-black uppercase tracking-[0.4em]">CAMPEÓN DEL TORNEO</p>
-                                </div>
-                              );
-                            }
-
-                            return (
-                              <>
-                                <h2 className="text-3xl font-black text-white uppercase italic tracking-tighter mb-1">PROCLAMAR GANADOR</h2>
-                                <p className="text-gray-400 text-[10px] font-black uppercase tracking-[0.3em] mb-6">Resultados de la Simulación</p>
-
-                                {/* Winner Selection for Judges */}
-                                {isAssignedJudge && torneo.status !== 'finished' && torneo.matches && torneo.matches.length > 0 && (
-                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto mb-8">
-                                    {(() => {
-                                      const compA = inscritos.find(i => i.id === finalMatch.competitor_a);
-                                      const compB = inscritos.find(i => i.id === finalMatch.competitor_b);
-
-                                      return [
-                                        { id: finalMatch.competitor_a, name: compA?.nombre || finalMatch.competitor_a_name || "Competidor A" },
-                                        { id: finalMatch.competitor_b, name: compB?.nombre || finalMatch.competitor_b_name || "Competidor B" }
-                                      ].map((comp) => (
-                                        <button
-                                          key={comp.id}
-                                          onClick={() => handleConfirmarGanador(comp.id)}
-                                          className="group bg-black/40 border border-white/10 p-6 rounded-2xl hover:border-yellow-500/50 transition-all flex flex-col items-center gap-4 active:scale-95"
-                                        >
-                                          <div className="w-16 h-16 bg-gradient-to-br from-gray-700 to-gray-900 rounded-full flex items-center justify-center text-2xl font-black text-white group-hover:from-yellow-500 group-hover:to-amber-600 transition-all">
-                                            {comp.name.charAt(0)}
-                                          </div>
-                                          <div>
-                                            <p className="text-white font-black uppercase italic tracking-tighter">{comp.name}</p>
-                                            <p className="text-[9px] text-yellow-500 uppercase font-black tracking-widest mt-1">ELEGIR COMO GANADOR</p>
-                                          </div>
-                                        </button>
-                                      ));
-                                    })()}
+                          {torneo.status === 'finished' && torneo.results && torneo.results.length > 0 ? (
+                            <div className="relative z-10">
+                              <h2 className="text-3xl font-black text-white uppercase italic tracking-tighter mb-6">Podio Oficial</h2>
+                              <div className="grid grid-cols-1 gap-4 max-w-xl mx-auto">
+                                {torneo.results.map((res, i) => (
+                                  <div key={i} className="flex items-center justify-between bg-black/40 border border-white/10 p-4 rounded-2xl">
+                                    <div className="flex items-center gap-4">
+                                      <div className={`w-10 h-10 rounded-full flex items-center justify-center font-black ${res.position === 1 ? 'bg-yellow-500 text-black' :
+                                          res.position === 2 ? 'bg-gray-400 text-black' :
+                                            'bg-orange-600 text-black'
+                                        }`}>
+                                        {res.position}°
+                                      </div>
+                                      <div className="text-left">
+                                        <div className="text-white font-black uppercase text-sm italic">{res.nombre}</div>
+                                        <div className="text-[10px] text-gray-400 uppercase font-bold">{res.robot} • {res.club}</div>
+                                      </div>
+                                    </div>
+                                    <div className="text-yellow-500 font-black italic">+{res.puntos} PTS</div>
                                   </div>
-                                )}
+                                ))}
+                              </div>
+                            </div>
+                          ) : (
+                            <>
+                              {(() => {
+                                const finalMatch = torneo.matches?.[torneo.matches.length - 1];
+                                const officialWinnerId = finalMatch?.winner_id;
+                                const officialWinner = officialWinnerId ? inscritos.find(i => i.id === officialWinnerId) : null;
 
-                                {!isAssignedJudge && (
-                                  <div className="mb-8">
-                                    <p className="text-yellow-400 font-black uppercase tracking-widest italic text-xl">
-                                      Esperando confirmación del Juez
-                                    </p>
-                                  </div>
-                                )}
-                              </>
-                            );
-                          })()}
+                                if (officialWinner) {
+                                  return (
+                                    <div className="mb-8 animate-bounce">
+                                      <h2 className="text-4xl md:text-6xl font-black text-yellow-500 uppercase italic tracking-tighter mb-2 drop-shadow-[0_0_20px_rgba(234,179,8,0.6)]">
+                                        {officialWinner.nombre}
+                                      </h2>
+                                      <p className="text-white text-sm font-black uppercase tracking-[0.4em]">CAMPEÓN DEL TORNEO</p>
+                                    </div>
+                                  );
+                                }
 
-                          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                                return (
+                                  <>
+                                    <h2 className="text-3xl font-black text-white uppercase italic tracking-tighter mb-1">PROCLAMAR GANADOR</h2>
+                                    <p className="text-gray-400 text-[10px] font-black uppercase tracking-[0.3em] mb-6">Resultados de la Simulación</p>
+
+                                    {/* Winner Selection for Judges */}
+                                    {isAssignedJudge && torneo.status !== 'finished' && torneo.matches && torneo.matches.length > 0 && (
+                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto mb-8">
+                                        {(() => {
+                                          const compA = inscritos.find(i => i.id === finalMatch.competitor_a);
+                                          const compB = inscritos.find(i => i.id === finalMatch.competitor_b);
+
+                                          return [
+                                            { id: finalMatch.competitor_a, name: compA?.nombre || finalMatch.competitor_a_name || "Competidor A" },
+                                            { id: finalMatch.competitor_b, name: compB?.nombre || finalMatch.competitor_b_name || "Competidor B" }
+                                          ].map((comp) => (
+                                            <button
+                                              key={comp.id}
+                                              onClick={() => handleConfirmarGanador(comp.id)}
+                                              className="group bg-black/40 border border-white/10 p-6 rounded-2xl hover:border-yellow-500/50 transition-all flex flex-col items-center gap-4 active:scale-95"
+                                            >
+                                              <div className="w-16 h-16 bg-gradient-to-br from-gray-700 to-gray-900 rounded-full flex items-center justify-center text-2xl font-black text-white group-hover:from-yellow-500 group-hover:to-amber-600 transition-all">
+                                                {comp.name.charAt(0)}
+                                              </div>
+                                              <div>
+                                                <p className="text-white font-black uppercase italic tracking-tighter">{comp.name}</p>
+                                                <p className="text-[9px] text-yellow-500 uppercase font-black tracking-widest mt-1">ELEGIR COMO GANADOR</p>
+                                              </div>
+                                            </button>
+                                          ));
+                                        })()}
+                                      </div>
+                                    )}
+
+                                    {!isAssignedJudge && (
+                                      <div className="mb-8">
+                                        <p className="text-yellow-400 font-black uppercase tracking-widest italic text-xl">
+                                          Esperando confirmación del Juez
+                                        </p>
+                                      </div>
+                                    )}
+                                  </>
+                                );
+                              })()}
+                            </>
+                          )}
+
+                          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mt-8">
                             <button
                               onClick={handleReiniciar}
                               className="px-6 py-2 bg-white/5 border border-white/10 text-white rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all"
@@ -745,17 +787,32 @@ const VistaTorneo = () => {
                         ? "Los combates han comenzado. ¡Mucha suerte!"
                         : (esInscrito
                           ? `Felicidades ${userInfo?.nickname || 'Participante'}. Esperando al inicio del administrador.`
-                          : (isFromLogin ? "Tu equipo está verificado. Pulsa para inscribir tu robot." : "Necesitas logearte para participar"))}
+                          : (isFromLogin
+                            ? (userInfo?.role === 'judge' ? "Estás asignado como Juez para este evento." : "Tu equipo está verificado. Pulsa para inscribir tu robot.")
+                            : "Necesitas logearte para participar"))}
                     </p>
                   </div>
                   <div className="space-y-3">
-                    {faseSimulacion === 'idle' && !esInscrito && (
+                    {faseSimulacion === 'idle' && !esInscrito && torneo.status === 'draft' && userInfo?.role !== 'judge' && (
                       <button
                         onClick={() => isFromLogin ? handleInscripcion() : setModalRegistroAbierto(true)}
                         className="w-full py-4 bg-white text-[#0A0F24] rounded-2xl font-black uppercase tracking-widest text-xs hover:scale-[1.02] transition-all active:scale-[0.98] shadow-xl"
                       >
                         {isFromLogin ? "Inscribirse" : "Inscribirte"}
                       </button>
+                    )}
+                    {torneo.status !== 'draft' && torneo.status !== 'finished' && !esInscrito && (
+                      <button
+                        disabled
+                        className="w-full py-4 bg-gray-400/20 text-gray-400 border border-white/10 rounded-2xl font-black uppercase tracking-widest text-xs cursor-not-allowed"
+                      >
+                        Inscripciones Cerradas
+                      </button>
+                    )}
+                    {torneo.status === 'finished' && (
+                      <div className="p-4 bg-white/10 border border-white/20 rounded-2xl text-center">
+                        <p className="text-white font-black uppercase tracking-widest text-[10px]">Torneo Finalizado</p>
+                      </div>
                     )}
                     {esInscrito && registrationStatus === 'pending' && (
                       <button

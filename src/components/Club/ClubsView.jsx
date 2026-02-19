@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Info, X, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { dataService } from "../../services/dataService";
+import { clubService } from "../../services/clubService";
 import { Skeleton } from "../ui/Skeleton";
 
 const ClubsView = ({ onSelectClub, isFromLogin, searchTerm = "" }) => {
@@ -11,6 +12,19 @@ const ClubsView = ({ onSelectClub, isFromLogin, searchTerm = "" }) => {
     const [modalRegistroAbierto, setModalRegistroAbierto] = useState(false);
     const [clubs, setClubs] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [joiningId, setJoiningId] = useState(null);
+
+    const handleJoin = async (club) => {
+        setJoiningId(club.id);
+        try {
+            await clubService.joinClub(club.id);
+            alert(`¡Solicitud enviada al club ${club.nombre}! Tu membresía está pendiente de aprobación.`);
+        } catch (err) {
+            alert(err.message || "Error al intentar unirse al club");
+        } finally {
+            setJoiningId(null);
+        }
+    };
 
     useEffect(() => {
         const fetchClubs = async () => {
@@ -174,11 +188,11 @@ const ClubsView = ({ onSelectClub, isFromLogin, searchTerm = "" }) => {
                                             <Info size={14} /> Detalles
                                         </button>
                                         <button
-                                            disabled={club.estado === 'Completo'}
-                                            onClick={() => isFromLogin ? alert("¡Solicitud enviada al club!") : setModalRegistroAbierto(true)}
-                                            className="px-4 bg-transparent border border-[#1E90FF]/30 text-[#00C2FF] hover:bg-[#1E90FF]/10 disabled:opacity-30 disabled:pointer-events-none py-2.5 rounded-lg text-[10px] font-black uppercase transition-all"
+                                            disabled={club.estado === 'Completo' || joiningId === club.id}
+                                            onClick={() => isFromLogin ? handleJoin(club) : setModalRegistroAbierto(true)}
+                                            className={`px-4 bg-transparent border border-[#1E90FF]/30 text-[#00C2FF] hover:bg-[#1E90FF]/10 disabled:opacity-30 disabled:pointer-events-none py-2.5 rounded-lg text-[10px] font-black uppercase transition-all ${joiningId === club.id ? 'animate-pulse' : ''}`}
                                         >
-                                            Unirme
+                                            {joiningId === club.id ? "Uniéndose..." : "Unirme"}
                                         </button>
                                     </div>
                                 </div>
