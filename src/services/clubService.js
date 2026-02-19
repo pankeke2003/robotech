@@ -1,4 +1,6 @@
-const API_URL = "http://127.0.0.1:3000/api/clubs";
+import { API_BASE_URL } from "../config/api";
+
+const API_URL = `${API_BASE_URL}/clubs`;
 
 export const clubService = {
     /**
@@ -47,7 +49,7 @@ export const clubService = {
         const token = localStorage.getItem("token");
         if (!user || !user.id || !token) throw new Error("Debes iniciar sesión para unirse a un club");
 
-        const response = await fetch(`http://127.0.0.1:3000/api/users/${user.id}`, {
+        const response = await fetch(`${API_BASE_URL}/users/${user.id}`, {
             method: "PATCH",
             headers: {
                 "Content-Type": "application/json",

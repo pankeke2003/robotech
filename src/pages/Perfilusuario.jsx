@@ -22,6 +22,7 @@ import logo from "../assets/images/logo.png";
 import { Skeleton } from "../components/ui/Skeleton";
 
 import { authService } from "../services/authService";
+import { API_BASE_URL, getServerUrl } from "../config/api";
 
 const Perfil = () => {
   const navigate = useNavigate();
@@ -113,10 +114,10 @@ const Perfil = () => {
         let url;
         // Si el usuario es competidor y tiene un club_id asociado
         if (displayUser.role === 'competitor' && displayUser.competitor?.club_id) {
-          url = `http://localhost:3000/api/clubs/${displayUser.competitor.club_id}`;
+          url = `${API_BASE_URL}/clubs/${displayUser.competitor.club_id}`;
         } else {
           // Por defecto buscar si es dueño de algún club
-          url = `http://localhost:3000/api/clubs?owner_id=${displayUser.id}`;
+          url = `${API_BASE_URL}/clubs?owner_id=${displayUser.id}`;
         }
 
         const res = await fetch(url);
@@ -160,7 +161,7 @@ const Perfil = () => {
       if (!displayUser?.id) return;
       try {
         const token = localStorage.getItem("token");
-        const res = await fetch(`http://127.0.0.1:3000/api/robots?user_id=${displayUser.id}`, {
+        const res = await fetch(`${API_BASE_URL}/robots?user_id=${displayUser.id}`, {
           headers: {
             "Authorization": `Bearer ${token}`
           }
@@ -178,7 +179,7 @@ const Perfil = () => {
     const fetchCategories = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await fetch('http://127.0.0.1:3000/api/categories', {
+        const res = await fetch(`${API_BASE_URL}/categories`, {
           headers: {
             "Authorization": `Bearer ${token}`
           }
@@ -200,7 +201,7 @@ const Perfil = () => {
     setCreatingRobot(true);
     try {
       const token = authService.getToken() || localStorage.getItem("token");
-      const res = await fetch('http://127.0.0.1:3000/api/robots', {
+      const res = await fetch(`${API_BASE_URL}/robots`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -270,7 +271,7 @@ const Perfil = () => {
     // Si viene de ranking, mostrar el robot del ranking
     robots: robots,
     profile_picture: displayUser?.profile_picture
-      ? (displayUser.profile_picture.startsWith('http') ? displayUser.profile_picture : `http://127.0.0.1:3000${displayUser.profile_picture}`)
+      ? (displayUser.profile_picture.startsWith('http') ? displayUser.profile_picture : getServerUrl(displayUser.profile_picture))
       : null
   };
 

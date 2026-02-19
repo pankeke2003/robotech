@@ -1,4 +1,6 @@
-const API_URL = "http://127.0.0.1:3000/api/auth";
+import { API_BASE_URL } from "../config/api";
+
+const API_URL = `${API_BASE_URL}/auth`;
 
 export const authService = {
     /**
@@ -65,7 +67,7 @@ export const authService = {
         const formData = new FormData();
         formData.append("file", file);
 
-        const response = await fetch("http://127.0.0.1:3000/api/upload", {
+        const response = await fetch(`${API_BASE_URL}/upload`, {
             method: "POST",
             body: formData,
         });
@@ -81,7 +83,7 @@ export const authService = {
      */
     updateUserProfile: async (userId, data) => {
         const token = localStorage.getItem("token");
-        const response = await fetch(`http://127.0.0.1:3000/api/users/${userId}`, {
+        const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
             method: "PATCH",
             headers: {
                 "Content-Type": "application/json",

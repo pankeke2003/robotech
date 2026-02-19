@@ -18,6 +18,7 @@ import {
 } from "react-icons/fi";
 import { FaRobot, FaUsers } from "react-icons/fa";
 import { authService } from "../../services/authService";
+import { getServerUrl } from "../../config/api";
 
 // Assets
 import userlog from "../../assets/images/userlogo.png";
@@ -69,7 +70,7 @@ const Ediruser = () => {
       });
       // If backend provides a full URL for profile_picture, use it, otherwise fallback
       if (currentUser.profile_picture) {
-        setAvatar(currentUser.profile_picture.startsWith('http') ? currentUser.profile_picture : `http://127.0.0.1:3000${currentUser.profile_picture}`);
+        setAvatar(currentUser.profile_picture.startsWith('http') ? currentUser.profile_picture : getServerUrl(currentUser.profile_picture));
       } else {
         setAvatar("https://www.gravatar.com/avatar/0000?d=mp&f=y");
       }

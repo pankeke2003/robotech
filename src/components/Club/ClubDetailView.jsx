@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Users, Shield, Trophy, Target, Star, Calendar, ArrowLeft, Gamepad2, Award, Search, Menu, User, LogOut } from 'lucide-react';
 import logo from "../../assets/images/logo.png";
 import userLogo from "../../assets/images/userlogo.png";
+import { API_BASE_URL, getServerUrl } from "../../config/api";
 
 const ClubDetailView = ({ club, onBack, isFromLogin }) => {
     const navigate = useNavigate();
@@ -16,7 +17,7 @@ const ClubDetailView = ({ club, onBack, isFromLogin }) => {
         const fetchClubDetails = async () => {
             if (club?.id) {
                 try {
-                    const res = await fetch(`/api/clubs/${club.id}`);
+                    const res = await fetch(`${API_BASE_URL}/clubs/${club.id}`);
                     if (res.ok) {
                         const data = await res.json();
                         setFullClubData(data);
@@ -84,7 +85,7 @@ const ClubDetailView = ({ club, onBack, isFromLogin }) => {
                                     <p className="text-[9px] text-[#00C2FF] mt-1 uppercase tracking-widest font-black">{currentUser?.role || "Competidor"}</p>
                                 </div>
                                 <img
-                                    src={currentUser?.profile_picture ? (currentUser.profile_picture.startsWith('http') ? currentUser.profile_picture : `http://127.0.0.1:3000${currentUser.profile_picture}`) : "https://www.gravatar.com/avatar/0000?d=mp&f=y"}
+                                    src={currentUser?.profile_picture ? (currentUser.profile_picture.startsWith('http') ? currentUser.profile_picture : getServerUrl(currentUser.profile_picture)) : "https://www.gravatar.com/avatar/0000?d=mp&f=y"}
                                     alt="User"
                                     className="w-9 h-9 rounded-full border border-[#00C2FF] object-cover"
                                 />

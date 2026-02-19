@@ -11,6 +11,7 @@ import {
     UserCheck
 } from "lucide-react";
 import { authService } from "../services/authService";
+import { API_BASE_URL } from "../config/api";
 import loadingGif from "../assets/images/loading.gif";
 
 export default function GestionarMiClub({ clubId }) {
@@ -24,7 +25,7 @@ export default function GestionarMiClub({ clubId }) {
     const fetchClubData = async () => {
         try {
             const token = localStorage.getItem("token");
-            const response = await fetch(`http://127.0.0.1:3000/api/clubs/${clubId}`, {
+            const response = await fetch(`${API_BASE_URL}/clubs/${clubId}`, {
                 headers: { "Authorization": `Bearer ${token}` }
             });
             if (response.ok) {
@@ -89,7 +90,7 @@ export default function GestionarMiClub({ clubId }) {
         setActionLoading(true);
         try {
             const token = localStorage.getItem("token");
-            const response = await fetch(`http://127.0.0.1:3000/api/clubs/${clubId}`, {
+            const response = await fetch(`${API_BASE_URL}/clubs/${clubId}`, {
                 method: "PATCH",
                 headers: {
                     "Content-Type": "application/json",

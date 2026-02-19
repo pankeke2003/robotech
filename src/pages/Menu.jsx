@@ -46,6 +46,7 @@ import { FiAward, FiCpu, FiBarChart2, FiGlobe } from "react-icons/fi";
 import CommandPalette from "../components/CommandPalette";
 import { authService } from "../services/authService";
 import { dataService } from "../services/dataService";
+import { API_BASE_URL, getServerUrl } from "../config/api";
 
 // 🔹 Componente reutilizable para ítems del sidebar
 function SidebarItem({ icon, label, active, onClick }) {
@@ -211,7 +212,7 @@ export default function MenuPage() {
         try {
           // Asumiendo que el backend corre en el puerto 3000 por defecto
           // Si estás usando el 3001 (webpack), asegúrate de que esto coincida
-          const response = await fetch(`http://127.0.0.1:3000/api/clubs?owner_id=${userInfo.id}`);
+          const response = await fetch(`${API_BASE_URL}/clubs?owner_id=${userInfo.id}`);
           if (response.ok) {
             const data = await response.json();
             // La API devuelve { total, data: [] }
@@ -409,7 +410,7 @@ export default function MenuPage() {
                     label="Panel Admin"
                     active={vista === "admin-panel"}
                     onClick={() => {
-                      window.open("http://localhost:3000/admin", "_blank");
+                      window.open(getServerUrl("/admin"), "_blank");
                     }}
                   />
                 )}
@@ -541,7 +542,7 @@ export default function MenuPage() {
                     <p className="text-[10px] text-[#00C2FF]">{getRoleLabel()}</p>
                   </div>
                   <img
-                    src={userInfo?.profile_picture ? (userInfo.profile_picture.startsWith('http') ? userInfo.profile_picture : `http://127.0.0.1:3000${userInfo.profile_picture}`) : "https://www.gravatar.com/avatar/0000?d=mp&f=y"}
+                    src={userInfo?.profile_picture ? (userInfo.profile_picture.startsWith('http') ? userInfo.profile_picture : getServerUrl(userInfo.profile_picture)) : "https://www.gravatar.com/avatar/0000?d=mp&f=y"}
                     alt="User"
                     className="w-10 h-10 rounded-full border border-[#00C2FF] object-cover"
                   />
